@@ -1,0 +1,47 @@
+name: CI - build & test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        dotnet-version: [8.0, 7.0] # adjust to the .NET versions you support
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Restore dependencies
+        run: dotnet restore src/MyAspNetCoreApp
+
+      - name: Build
+        run: dotnet build src/MyAspNetCoreApp --no-restore --configuration Release
+
+      - name: Test (if you have tests)
+        run: |
+          if [ -d "tests" ]; then
+            dotnet test tests --no-build --verbosity normal
+          else
+            echo "No tests folder found; skipping dotnet test"
+          fi
+
+      - name: Publish artifact
+        run: dotnet publish src/MyAspNetCoreApp -c Release -o ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-app
+          path: ./publish
