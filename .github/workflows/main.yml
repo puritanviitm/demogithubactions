@@ -5,7 +5,6 @@ on:
   push:
     branches: [ master ]
 
-
 jobs:
   build-and-deploy:
     runs-on: windows-latest
@@ -17,7 +16,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0' # choose your target
+          dotnet-version: '8.0'
 
       - name: Restore
         run: dotnet restore src/MyAspNetCoreApp
@@ -34,13 +33,15 @@ jobs:
             Write-Output "No tests found; skipping"
           }
 
-
       - name: Publish
         run: dotnet publish src/MyAspNetCoreApp -c Release -o ./publish
+
+      - name: Zip files for deployment
+        run: Compress-Archive -Path publish\* -DestinationPath app.zip -Force
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'newebappdemo'      # replace with your app name
+          app-name: 'newebappdemo'
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./publish
+          package: app.zip
