@@ -27,11 +27,13 @@ jobs:
 
       - name: Test
         run: |
-          if [ -d "tests" ]; then
+          if (Test-Path "tests") {
             dotnet test tests --no-build --logger "trx"
-          else
-            echo "No tests found; skipping"
-          fi
+          }
+          else {
+            Write-Output "No tests found; skipping"
+          }
+
 
       - name: Publish
         run: dotnet publish src/MyAspNetCoreApp -c Release -o ./publish
