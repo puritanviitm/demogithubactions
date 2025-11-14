@@ -3,15 +3,11 @@ name: CI-CD - build, test, deploy to Azure
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
-
-env:
-  AZURE_WEBAPP_NAME: 'newebappdemo'
-  DOTNET_VERSION: '8.0'
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -20,16 +16,16 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '8.0' # choose your target
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Restore
+        run: dotnet restore src/MyAspNetCoreApp
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/MyAspNetCoreApp --configuration Release --no-restore
 
       - name: Test
-        run: |
+        run:  |
           if (Test-Path "tests") {
             dotnet test tests --no-build --logger "trx"
           }
@@ -37,15 +33,13 @@ jobs:
             Write-Output "No tests found; skipping"
           }
 
-      - name: Publish
-        run: dotnet publish -c Release -o ./publish --no-build
 
-      - name: Zip files for deployment
-        run: Compress-Archive -Path publish\* -DestinationPath app.zip -Force
+      - name: Publish
+        run: dotnet publish src/MyAspNetCoreApp -c Release -o ./publish
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v2
         with:
-         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-         package: app.zip
+          app-name: 'newebappdemo'      # replace with your app name
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
